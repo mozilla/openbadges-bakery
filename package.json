@@ -1,0 +1,37 @@
+{
+  "name": "openbadges-bakery",
+  "description": "Tools for baking/debaking openbadge images",
+  "version": "0.1.0",
+  "homepage": "https://github.com/mozilla/openbadges-bakery",
+  "author": {
+    "name": "Brian J Brennan",
+    "email": "brian@mozillafoundation.org"
+    "url": "http://openbadges.org"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mozilla/openbadges-bakery.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mozilla/openbadges-bakery/issues"
+  },
+  "licenses": [
+    {
+      "type": "MPL 2.0",
+      "url": "http://www.mozilla.org/MPL/2.0/"
+    }
+  ],
+  "main": "lib/bakery",
+  "engines": {
+    "node": ">= 0.8.0"
+  },
+  "scripts": {
+    "test": "make test"
+  },
+  "devDependencies": {
+    "tap": "~0.3.1"
+  },
+  "keywords": [],
+  "dependencies": {
+  }
+}
