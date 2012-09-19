@@ -159,3 +159,14 @@ test('bakery.debake: 500 should return generic error', function (t) {
     });
   });
 });
+
+test('bakery.debake: error when DNS fails', function (t) {
+  var opts = { image: getImageStream(), url: 'http://this.does.not.exist.bogus'};
+  bakery.bake(opts, function (err, baked) {
+    bakery.debake(baked, function (err, contents) {
+      t.ok(err, 'should have an error');
+      t.same(err.code, 'REQUEST_ERROR', 'should be a request error');
+      t.end();
+    });
+  });
+});
