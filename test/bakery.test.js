@@ -92,12 +92,33 @@ test('bakery.bake: do not bake something twice', function (t) {
 });
 
 test('bakery.debake: should work', function (t) {
-  var opts = { body: '{"band": "grapeful dread"}'};
+  var expect = {band: 'grapeful dread'};
+  var opts = {
+    body: JSON.stringify(expect),
+    type: 'application/json'
+  };
   broil(opts, function (baked) {
     bakery.debake(baked, function (err, contents) {
       t.notOk(err, 'should not have an error');
-      t.same(contents, opts.body);
+      t.same(contents, expect);
       t.end();
     });
   });
+});
+
+test('bakery.debake: 404 should return error', function (t) {
+  var opts = { body: 'x', statusCode: 404 };
+  broil(opts, function (baked) {
+    bakery.debake(baked, function (err, contents) {
+      t.ok(err, 'should have an error');
+      t.same(err.code, 'RESOURCE_NOT_FOUND', 'should have a resource not found error');
+      t.same(err.httpStatusCode, 404, 'should have a 404');
+      t.end();
+    });
+  });
+});
+
+test('bakery.debake:', function (t) {
+
+  t.end();
 });
