@@ -132,7 +132,14 @@ test('bakery.debake: 404 should return error', function (t) {
   });
 });
 
-test('bakery.debake:', function (t) {
-
-  t.end();
+test('bakery.debake: 500 should return generic error', function (t) {
+  var opts = { body: 'x', statusCode: 500 };
+  broil(opts, function (baked) {
+    bakery.debake(baked, function (err, contents) {
+      t.ok(err, 'should have an error');
+      t.same(err.code, 'RESOURCE_ERROR', 'should have a generic resource error');
+      t.same(err.httpStatusCode, 500, 'should have a 500');
+      t.end();
+    });
+  });
 });
