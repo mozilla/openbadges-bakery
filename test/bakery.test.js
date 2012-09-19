@@ -106,6 +106,20 @@ test('bakery.debake: should work', function (t) {
   });
 });
 
+test('bakery.debake: should get a parse error', function (t) {
+  var opts = {
+    body: "{no json here}",
+    type: 'application/json'
+  };
+  broil(opts, function (baked) {
+    bakery.debake(baked, function (err, contents) {
+      t.ok(err, 'should have an error');
+      t.same(err.code, 'JSON_PARSE_ERROR', 'should be a json parse error');
+      t.end();
+    });
+  });
+});
+
 test('bakery.debake: 404 should return error', function (t) {
   var opts = { body: 'x', statusCode: 404 };
   broil(opts, function (baked) {
