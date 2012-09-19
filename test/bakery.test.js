@@ -170,3 +170,12 @@ test('bakery.debake: error when DNS fails', function (t) {
     });
   });
 });
+
+test('bakery.debake: error when debaking unbaked image', function (t) {
+  var image = getImageStream();
+  bakery.debake(image, function (err, contents) {
+    t.ok(err, 'should have an error');
+    t.same(err.code, 'IMAGE_UNBAKED', 'should get unbaked image error');
+    t.end();
+  });
+});
