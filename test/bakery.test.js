@@ -10,21 +10,37 @@ var bakery = require('../lib/bakery');
 var IMG_PATH = pathutil.join(__dirname, 'testimage.png');
 var ASSERTION_URL = "http://example.org";
 
+/**
+ * Get an image stream for the default image.
+ */
+
 function getImageStream() {
   var imgStream = fs.createReadStream(IMG_PATH);
   return imgStream;
 }
+
+/**
+ * Get the image buffer for the default image
+ */
 
 function getImageBuffer() {
   var imgBuffer = fs.readFileSync(IMG_PATH);
   return imgBuffer;
 }
 
+/**
+ * quickly bake an image with the standard url
+ */
+
 function preheat(callback) {
   var imgStream = getImageStream();
   var options = {image: imgStream, url: ASSERTION_URL};
   bakery.bake(options, callback);
 }
+
+/**
+ * start a server with some options, then bake an image with that url
+ */
 
 function broil(opts, callback) {
   oneshot(opts, function (server, urlobj) {
@@ -137,7 +153,7 @@ test('bakery.debake: 500 should return generic error', function (t) {
   broil(opts, function (baked) {
     bakery.debake(baked, function (err, contents) {
       t.ok(err, 'should have an error');
-      t.same(err.code, 'RESOURCE_ERROR', 'should have a generic resource error');
+      t.same(err.code, 'RESOURCE_ERROR', 'should have a resource error');
       t.same(err.httpStatusCode, 500, 'should have a 500');
       t.end();
     });
