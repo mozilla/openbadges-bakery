@@ -9,14 +9,14 @@ $ npm install openbadges-bakery
 ## Baking
 
 ```bash
-$ oven [--in path/to/image.png] [--out path/to/baked-image.png] <data>
+$ oven [--in ./path/to/image.png] [--out ./path/to/baked-image.png] <data>
 ```
 If `--out` is not set, the baked image will print to stdout.
 
 The input file can also be piped into stdin.
 
 ```bash
-$ cat path/to/image.png | oven <data> > path/to/baked-image.png
+$ oven <data> <  ./path/to/image.png  > ./path/to/baked-image.png
 ```
 ## Extracting
 

@@ -2,56 +2,73 @@
 
 const fs = require('fs');
 const argv = require('optimist').argv;
-const stdout = process.stdout;
-const stdin = process.stdin;
-const stderr = process.stderr;
 const bakery = require('../');
 const path = require('path');
 const url = argv._[0];
 const infile = argv.in||argv.infile;
 const outfile = argv.out||argv.outfile;
-const extract = argv.extract;
+const extract = 'extract' in argv;
 
-function log(msg) {
-  stderr.write(msg + '\n');
-}
+function log(msg) { process.stderr.write(msg + '\n') }
+function out(data) { process.stdout.write(data) }
 
-if (!url && !extract)  {
-  log('You must pass a url to bake into the image');
-  process.exit(1);
-}
-
-var stream;
-if (infile) {
-  stream = fs.createReadStream(path.resolve(infile));
-} else {
-  stdin.resume();
-  stream = stdin;
-}
-
-if (extract) {
+function extractData(stream, timer) {
   bakery.extract(stream, function done(err, data) {
+    timer && timer.clear();
     if (err) {
       log('there was an error:', err.message);
       process.exit(1);
     }
-    stdout.write(data + '\n');
-    process.exit(1);
+    out(data + '\n');
+    process.exit(0);
   })
 }
 
-bakery.bake({
-  image: stream,
-  url: url
-}, function done(err, baked) {
-  if (err) {
-    log('there was an error:', err.message);
+function bakeImage(stream, timer) {
+  stream.resume();
+  bakery.bake({
+    image: stream,
+    url: url
+  }, function done(err, baked) {
+    timer && timer.clear();
+    if (err) {
+      log('there was an error:', err.message);
+      process.exit(1);
+    }
+    if (outfile) {
+      fs.writeFileSync(path.resolve(outfile), baked)
+    } else {
+      out(baked);
+    }
+    process.exit(0);
+  });
+}
+
+(function main() {
+  const timer = {
+    id: null,
+    length: 2000,
+    clear: function () { this.id && clearTimeout(this.id) },
+    set: function () { return this.id = setTimeout.apply(null, arguments) }
+  };
+  if (!url && !extract)  {
+    log('You must pass a url to bake into the image');
     process.exit(1);
   }
-  if (outfile) {
-    fs.writeFileSync(path.resolve(outfile), baked)
-  } else {
-    stdout.write(baked);
-  }
-  process.exit(0);
+  const stream = (function figureOutStream() {
+    if (infile)
+      return fs.createReadStream(path.resolve(infile))
+    timer.set(function () { log('waiting for PNG data on stdin...')}, 2000);
+    return process.stdin
+  })()
+
+  if (extract)
+    return extractData(stream, timer);
+  return bakeImage(stream, timer);
+})()
+
+
+process.on('SIGINT', function () {
+  log('interrupt');
+  process.exit(2);
 });
