@@ -2,13 +2,15 @@
   "name": "openbadges-bakery",
   "version": "0.1.1",
   "description": "Tools for baking and debaking openbadge images",
-  "main": "lib/bakery.js",
+  "main": "index.js",
   "directories": {
     "test": "test"
   },
+  "bin": "bin/oven",
   "dependencies": {
     "request": "~2.11.4",
-    "streampng": "~0.1.1"
+    "streampng": "~0.1.1",
+    "optimist": "~0.3.5"
   },
   "devDependencies": {
     "oneshot": "~0.1.0",

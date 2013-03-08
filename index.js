@@ -6,12 +6,12 @@
  * Licensed under the MPL 2.0 license.
  */
 
-var util = require('util');
-var streampng = require('streampng');
-var request = require('request');
-var urlutil = require('url');
+const util = require('util');
+const streampng = require('streampng');
+const request = require('request');
+const urlutil = require('url');
 
-var KEYWORD = 'openbadges';
+const KEYWORD = 'openbadges';
 
 function createChunk(url) {
   return streampng.Chunk.tEXt({
@@ -21,11 +21,13 @@ function createChunk(url) {
 }
 
 exports.bake = function bake(options, callback) {
-  var buffer = options.image;
-  var png = streampng(buffer);
-  // #TODO: make sure the url is set
-  var chunk = createChunk(options.url);
+  const buffer = options.image;
+  const data = options.url || options.data;
+  const png = streampng(buffer);
+  const chunk = createChunk(data);
   var existingChunk;
+  if (!data)
+    return callback(new Error('must pass a `data` or `url` option'));
   png.inject(chunk, function (txtChunk) {
     if (txtChunk.keyword === KEYWORD) {
       existingChunk = txtChunk;
@@ -33,8 +35,8 @@ exports.bake = function bake(options, callback) {
     }
   });
   if (existingChunk) {
-    var msg = util.format('This image already has a chunk with the `%s` keyword (contains: %j)', KEYWORD, chunk.text);
-    var error = new Error(msg);
+    const msg = util.format('This image already has a chunk with the `%s` keyword (contains: %j)', KEYWORD, chunk.text);
+    const error = new Error(msg);
     error.code = 'IMAGE_ALREADY_BAKED';
     error.contents = existingChunk.text;
     return callback(error);
@@ -42,8 +44,8 @@ exports.bake = function bake(options, callback) {
   return png.out(callback);
 };
 
-exports.getBakedData = function getBakedData(img, callback) {
-  var png = streampng(img);
+exports.extract = function extract(img, callback) {
+  const png = streampng(img);
   var found = false;
 
   function textListener(chunk) {
@@ -56,7 +58,7 @@ exports.getBakedData = function getBakedData(img, callback) {
 
   function endListener() {
     if (!found) {
-      var error = new Error('Image does not have any baked in data.');
+      const error = new Error('Image does not have any baked in data.');
       error.code = 'IMAGE_UNBAKED';
       return callback(error);
     }
@@ -68,7 +70,7 @@ exports.getBakedData = function getBakedData(img, callback) {
 
 
 exports.debake = function debake(image, callback) {
-  exports.getBakedData(image, function (error, url) {
+  exports.extract(image, function (error, url) {
     if (error)
       return callback(error);
 
@@ -78,8 +80,8 @@ exports.debake = function debake(image, callback) {
         return callback(error);
       }
 
-      var status = response.statusCode;
-      var type = response.headers['content-type'];
+      const status = response.statusCode;
+      const type = response.headers['content-type'];
 
       if (status == 200 && type == 'application/json')
         return exports.parseResponse(body, url, callback);
@@ -104,7 +106,7 @@ exports.parseResponse = function parseResponse(body, url, callback) {
   return callback(null, obj);
 };
 
-var errors = {
+const errors = {
   request: function (original, url) {
     var msg = util.format('There was an error initiating the request: %s', original.message);
     var error = new Error(msg);

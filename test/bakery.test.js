@@ -5,7 +5,7 @@ var pathutil = require('path');
 var urlutil = require('url');
 var oneshot = require('oneshot');
 
-var bakery = require('../lib/bakery');
+var bakery = require('..');
 
 var IMG_PATH = pathutil.join(__dirname, 'testimage.png');
 var ASSERTION_URL = "http://example.org";
@@ -70,7 +70,7 @@ test('bakery.bake: takes a buffer', function (t) {
   bakery.bake(options, function (err, baked) {
     t.notOk(err, 'should not have an error');
     t.ok(baked, 'should get back some data');
-    bakery.getBakedData(baked, function (err, url) {
+    bakery.extract(baked, function (err, url) {
       t.notOk(err, 'there should be a matching tEXt chunk');
       t.same(url, ASSERTION_URL, 'should be able to find the url');
       t.end();
@@ -87,7 +87,7 @@ test('bakery.bake: takes a stream', function (t) {
   bakery.bake(options, function (err, baked) {
     t.notOk(err, 'should not have an error');
     t.ok(baked, 'should get back some data');
-    bakery.getBakedData(baked, function (err, url) {
+    bakery.extract(baked, function (err, url) {
       t.notOk(err, 'there should be a matching tEXt chunk');
       t.same(url, ASSERTION_URL, 'should be able to find the url');
       t.end();

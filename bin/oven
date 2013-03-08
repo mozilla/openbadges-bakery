@@ -1,0 +1,57 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+const argv = require('optimist').argv;
+const stdout = process.stdout;
+const stdin = process.stdin;
+const stderr = process.stderr;
+const bakery = require('../');
+const path = require('path');
+const url = argv._[0];
+const infile = argv.in||argv.infile;
+const outfile = argv.out||argv.outfile;
+const extract = argv.extract;
+
+function log(msg) {
+  stderr.write(msg + '\n');
+}
+
+if (!url && !extract)  {
+  log('You must pass a url to bake into the image');
+  process.exit(1);
+}
+
+var stream;
+if (infile) {
+  stream = fs.createReadStream(path.resolve(infile));
+} else {
+  stdin.resume();
+  stream = stdin;
+}
+
+if (extract) {
+  bakery.extract(stream, function done(err, data) {
+    if (err) {
+      log('there was an error:', err.message);
+      process.exit(1);
+    }
+    stdout.write(data + '\n');
+    process.exit(1);
+  })
+}
+
+bakery.bake({
+  image: stream,
+  url: url
+}, function done(err, baked) {
+  if (err) {
+    log('there was an error:', err.message);
+    process.exit(1);
+  }
+  if (outfile) {
+    fs.writeFileSync(path.resolve(outfile), baked)
+  } else {
+    stdout.write(baked);
+  }
+  process.exit(0);
+});
