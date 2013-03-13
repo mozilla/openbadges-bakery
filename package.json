@@ -1,6 +1,6 @@
 {
   "name": "openbadges-bakery",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Tools for baking and debaking openbadge images",
   "main": "index.js",
   "directories": {
@@ -11,8 +11,8 @@
     "request": "~2.11.4",
     "streampng": "0.1.2",
     "optimist": "~0.3.5"
-  }, 
- "devDependencies": {
+  },
+  "devDependencies": {
     "oneshot": "~0.1.0",
     "jshint": "~0.9.0",
     "tap": "~0.3.1"
