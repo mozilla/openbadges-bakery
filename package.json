@@ -9,10 +9,10 @@
   "bin": "bin/oven",
   "dependencies": {
     "request": "~2.11.4",
-    "streampng": "~0.1.1",
+    "streampng": "0.1.2",
     "optimist": "~0.3.5"
-  },
-  "devDependencies": {
+  }, 
+ "devDependencies": {
     "oneshot": "~0.1.0",
     "jshint": "~0.9.0",
     "tap": "~0.3.1"
