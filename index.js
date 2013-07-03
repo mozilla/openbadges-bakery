@@ -47,6 +47,7 @@ exports.bake = function bake(options, callback) {
 exports.extract = function extract(img, callback) {
   const png = streampng(img);
   var found = false;
+  var hadError = false;
 
   function textListener(chunk) {
     if (chunk.keyword !== 'openbadges')
@@ -57,15 +58,21 @@ exports.extract = function extract(img, callback) {
   }
 
   function endListener() {
-    if (!found) {
+    if (!found && !hadError) {
       const error = new Error('Image does not have any baked in data.');
       error.code = 'IMAGE_UNBAKED';
       return callback(error);
     }
   }
 
+  function errorListener(error) {
+    hadError = true; 
+    return callback(error);
+  }
+
   png.on('tEXt', textListener);
   png.once('end', endListener);
+  png.once('error', errorListener);
 };
 
 
