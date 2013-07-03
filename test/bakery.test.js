@@ -61,6 +61,14 @@ test('bakery.createChunk', function (t) {
   t.end();
 });
 
+test('bakery.extract', function (t) {
+  var nonImageBuffer = new Buffer('Totally not a png');
+  bakery.extract(nonImageBuffer, function (err, url) {
+    t.ok(err, 'should get error in callback arguments');
+    t.end();
+  });
+});
+
 test('bakery.bake: takes a buffer', function (t) {
   var imgBuffer = getImageBuffer();
   var options = {
