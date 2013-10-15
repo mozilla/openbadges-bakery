@@ -23,25 +23,39 @@ function createChunk(url) {
 exports.bake = function bake(options, callback) {
   const buffer = options.image;
   const data = options.url || options.data;
-  const png = streampng(buffer);
-  const chunk = createChunk(data);
-  var existingChunk;
+
   if (!data)
     return callback(new Error('must pass a `data` or `url` option'));
+
+  const png = streampng(buffer);
+  const chunk = createChunk(data);
+  var existingChunk, hadError;
+
   png.inject(chunk, function (txtChunk) {
     if (txtChunk.keyword === KEYWORD) {
       existingChunk = txtChunk;
       return false;
     }
-  });
-  if (existingChunk) {
-    const msg = util.format('This image already has a chunk with the `%s` keyword (contains: %j)', KEYWORD, chunk.text);
-    const error = new Error(msg);
-    error.code = 'IMAGE_ALREADY_BAKED';
-    error.contents = existingChunk.text;
-    return callback(error);
-  }
-  return png.out(callback);
+  })
+
+  png.on('error', function (err) {
+    hadError = true;
+    return callback(err)
+  })
+
+  png.on('end', function () {
+    if (hadError) return;
+
+    if (existingChunk) {
+      const msg = util.format('This image already has a chunk with the `%s` keyword (contains: %j)', KEYWORD, chunk.text);
+      const error = new Error(msg);
+      error.code = 'IMAGE_ALREADY_BAKED';
+      error.contents = existingChunk.text;
+      return callback(error);
+    }
+    return png.out(callback);
+  })
+
 };
 
 exports.extract = function extract(img, callback) {
@@ -66,7 +80,7 @@ exports.extract = function extract(img, callback) {
   }
 
   function errorListener(error) {
-    hadError = true; 
+    hadError = true;
     return callback(error);
   }
 

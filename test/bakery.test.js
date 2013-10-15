@@ -86,6 +86,23 @@ test('bakery.bake: takes a buffer', function (t) {
   })
 });
 
+test('bakery.bake: do not throw on bad image', function (t) {
+  var options = {
+    image: Buffer('pfffffft whatever'),
+    url: ASSERTION_URL,
+  }
+  try {
+    bakery.bake(options, function (err, baked) {
+      t.ok(err, 'should have an error')
+      t.notOk(baked, 'should not have baked data')
+    })
+  } catch(e) {
+    t.fail('should not have thrown')
+  } finally {
+    t.end()
+  }
+});
+
 test('bakery.bake: takes a stream', function (t) {
   var imgStream = getImageStream();
   var options = {
