@@ -9,6 +9,7 @@ var bakery = require('..');
 
 var IMG_PATH = pathutil.join(__dirname, 'testimage.png');
 var ASSERTION_URL = "http://example.org";
+var ASSERTION = { verify: {} };
 
 /**
  * Get an image stream for the default image.
@@ -45,7 +46,13 @@ function preheat(callback) {
 function broil(opts, callback) {
   oneshot(opts, function (server, urlobj) {
     var url = urlutil.format(urlobj);
-    var bakeOpts = { image: getImageStream(), url: url };
+    var bakeOpts;
+    if (opts.assertion) {
+      ASSERTION.verify.url = url;
+      var bakeOpts = { image: getImageStream(), data: ASSERTION };
+    } else {
+      var bakeOpts = { image: getImageStream(), url: url };
+    }
     bakery.bake(bakeOpts, function (err, baked) {
       if (err) throw err;
       callback(baked);
@@ -132,11 +139,27 @@ test('bakery.bake: do not bake something twice', function (t) {
   });
 });
 
-test('bakery.debake: should work', function (t) {
+test('bakery.debake: should work with URL', function (t) {
   var expect = {band: 'grapeful dread'};
   var opts = {
     body: JSON.stringify(expect),
     type: 'application/json'
+  };
+  broil(opts, function (baked) {
+    bakery.debake(baked, function (err, contents) {
+      t.notOk(err, 'should not have an error');
+      t.same(contents, expect);
+      t.end();
+    });
+  });
+});
+
+test('bakery.debake: should work with full assertion', function (t) {
+  var expect = {band: 'grapeful dread'};
+  var opts = {
+    body: JSON.stringify(expect),
+    type: 'application/json',
+    assertion: true
   };
   broil(opts, function (baked) {
     bakery.debake(baked, function (err, contents) {
