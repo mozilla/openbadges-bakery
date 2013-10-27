@@ -22,10 +22,14 @@ function createChunk(url) {
 
 exports.bake = function bake(options, callback) {
   const buffer = options.image;
-  const data = options.url || options.data;
+  var data = options.url || options.data;
 
   if (!data)
     return callback(new Error('must pass a `data` or `url` option'));
+
+  if (typeof data === 'object') {
+    data = JSON.stringify(data);
+  }
 
   const png = streampng(buffer);
   const chunk = createChunk(data);
@@ -103,8 +107,6 @@ exports.debake = function debake(image, callback) {
       url = assertion.verify.url;
     } catch (e) {
     }
-
-    console.log(data, url);
 
     request(url, function (error, response, body) {
       if (error) {

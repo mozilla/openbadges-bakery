@@ -49,7 +49,7 @@ function broil(opts, callback) {
     var bakeOpts;
     if (opts.assertion) {
       ASSERTION.verify.url = url;
-      var bakeOpts = { image: getImageStream(), data: JSON.stringify(ASSERTION) };
+      var bakeOpts = { image: getImageStream(), data: ASSERTION };
     } else {
       var bakeOpts = { image: getImageStream(), url: url };
     }
