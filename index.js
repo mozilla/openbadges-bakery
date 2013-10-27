@@ -91,9 +91,20 @@ exports.extract = function extract(img, callback) {
 
 
 exports.debake = function debake(image, callback) {
-  exports.extract(image, function (error, url) {
+  exports.extract(image, function (error, data) {
     if (error)
       return callback(error);
+
+    // is the extracted data a URL or an assertion?
+    var url = data;
+    var assertion;
+    try {
+      assertion = JSON.parse(data);
+      url = assertion.verify.url;
+    } catch (e) {
+    }
+
+    console.log(data, url);
 
     request(url, function (error, response, body) {
       if (error) {
@@ -104,13 +115,11 @@ exports.debake = function debake(image, callback) {
       const status = response.statusCode;
       const type = response.headers['content-type'];
 
-      if (status == 200 && type == 'application/json')
+      if (status == 200) {
         return exports.parseResponse(body, url, callback);
-
-      if (status != 200) {
-        error = (errors[status] || errors.generic)(status, url);
-        return callback(error);
       }
+      error = (errors[status] || errors.generic)(status, url);
+      return callback(error);
     });
   });
 };
