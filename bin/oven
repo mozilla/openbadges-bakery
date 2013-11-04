@@ -8,11 +8,13 @@ const url = argv._[0];
 const infile = argv.in||argv.infile;
 const outfile = argv.out||argv.outfile;
 const extract = 'extract' in argv;
+const svg = 'svg' in argv;
 
 function log(msg) { process.stderr.write(msg + '\n') }
 function out(data) { process.stdout.write(data) }
 
 function extractData(stream, timer) {
+  var opts = { svg: svg };
   bakery.extract(stream, function done(err, data) {
     timer && timer.clear();
     if (err) {
@@ -21,7 +23,7 @@ function extractData(stream, timer) {
     }
     out(data + '\n');
     process.exit(0);
-  })
+  }, opts);
 }
 
 function bakeImage(stream, timer) {
