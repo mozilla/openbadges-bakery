@@ -8,6 +8,7 @@
 
 const util = require('util');
 const streampng = require('streampng');
+const xml = require('node-xml');
 const request = require('request');
 const urlutil = require('url');
 
@@ -62,7 +63,7 @@ exports.bake = function bake(options, callback) {
 
 };
 
-exports.extract = function extract(img, callback) {
+exports.extractPNG = function extractPNG(img, callback) {
   const png = streampng(img);
   var found = false;
   var hadError = false;
@@ -93,6 +94,56 @@ exports.extract = function extract(img, callback) {
   png.once('error', errorListener);
 };
 
+exports.extractSVG = function extractSVG(img, callback) {
+  console.log();
+  const svg = new xml.SaxParser(function (parser) {
+    var insideAssertionTag = false;
+    var capturedData;
+    parser.onStartElementNS(function (elem, attrs, prefix, uri, namespaces) {
+      if (elem === 'assertion' && prefix === 'openbadges') {
+        insideAssertionTag = true;
+        attrs.forEach(function (attr) {
+          if (attr[0] === 'verify') {
+            capturedData = attr[1];
+          }
+        });
+      }
+    });
+    parser.onCdata(function (cdata) {
+      if (insideAssertionTag) {
+        capturedData = cdata;
+      }
+    });
+    parser.onEndElementNS(function (elem, attrs, prefix, uri, namespaces) {
+      if (elem === 'assertion' && prefix === 'openbadges') {
+         insideAssertionTag = false;
+         if (capturedData) {
+           return callback(null, capturedData);
+         }
+      }
+    });
+    parser.onEndDocument(function () {
+      const error = new Error('Image does not have any baked in data.');
+      error.code = 'IMAGE_UNBAKED';
+      return callback(error);
+    });
+    parser.onError(function (msg) {
+      console.error(msg);
+      const error = new Error(msg);
+      error.code = 'PARSE_ERROR';
+      return callback(error);
+    });
+  });
+  svg.parseString(img);
+};
+
+exports.extract = function extract(img, callback, opts) {
+  if (opts && opts.svg) {
+    return exports.extractSVG(img, callback);
+  } else {
+    return exports.extractPNG(img, callback);
+  }
+};
 
 exports.debake = function debake(image, callback) {
   exports.extract(image, function (error, data) {
