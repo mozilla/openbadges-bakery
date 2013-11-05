@@ -13,9 +13,6 @@ const urlutil = require('url');
 const png = require('./png')
 const svg = require('./svg')
 
-exports.extractPNG = png.extract
-exports.extractSVG = svg.extract
-
 exports.bake = function (options, callback) {
   if (svg.isSvg(options.image))
     return svg.bake(options, callback)
