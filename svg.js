@@ -1,5 +1,6 @@
 const util = require('util')
 const cheerio = require('cheerio')
+const concat = require('concat-stream')
 
 module.exports = {
   extract: extract,
@@ -15,9 +16,22 @@ function bake(opts, callback) {
 
   var err;
 
+  if (opts.image.pipe) {
+    return opts.image.pipe(concat(function (data) {
+      opts.image = data
+      return bake(opts, callback)
+    }))
+  }
+
   if (!url) {
-    err = TypeError('Must provide a valid assertion or URL')
+    err = new TypeError('Must provide a valid assertion or URL')
     err.code = 'INVALID_ASSERTION'
+    return callback(err)
+  }
+
+  if (!isSvg(opts.image)) {
+    err = new TypeError('Not an SVG')
+    err.code = 'INVALID_SVG'
     return callback(err)
   }
 
@@ -54,6 +68,18 @@ function isSvg(data) {
 
 function extract(svgData, callback) {
   var err;
+
+  if (!svgData) {
+    err = new TypeError('Must pass an image buffer or stream as first argument')
+    err.code = 'INVALID_SVG'
+    return callback(err)
+  }
+
+  if (svgData.pipe) {
+    return svgData.pipe(concat(function (data) {
+      extract(data, callback)
+    }))
+  }
 
   if (!isSvg(svgData)) {
     err = new TypeError('Not an SVG')
