@@ -16,16 +16,16 @@ const svg = require('./svg')
 exports.extractPNG = png.extract
 exports.extractSVG = svg.extract
 
-exports.bake = function (img, callback) {
-  return png.bake(img, callback)
+exports.bake = function (options, callback) {
+  if (svg.isSvg(options.image))
+    return svg.bake(options, callback)
+  return png.bake(options, callback)
 }
 
-exports.extract = function extract(img, callback, opts) {
-  if (opts && opts.svg) {
-    return exports.extractSVG(img, callback);
-  } else {
-    return exports.extractPNG(img, callback);
-  }
+exports.extract = function extract(img, callback) {
+  if (svg.isSvg(img))
+    return svg.extract(img, callback)
+  return png.extract(img, callback)
 };
 
 exports.debake = function debake(image, callback) {
