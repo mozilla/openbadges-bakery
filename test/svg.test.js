@@ -22,7 +22,7 @@ test('svg data extraction: bad json', function (t) {
   })
 })
 
-test('svg baking: all good', function (t) {
+test('svg baking: all good, full assertion', function (t) {
   const assertion = { verify: { url: 'http://example.org' }}
   const opts = {image: file('unbaked.svg'), data: assertion}
   svg.bake(opts, function (err, svgData) {
@@ -32,6 +32,17 @@ test('svg baking: all good', function (t) {
     })
   })
 })
+
+test('svg baking: all good, just url', function (t) {
+  const opts = {image: file('unbaked.svg'), url: 'http://example.org' }
+  svg.bake(opts, function (err, svgData) {
+    svg.extract(svgData, function (err, url) {
+      t.same(url, 'http://example.org')
+      t.end()
+    })
+  })
+})
+
 
 test('svg baking: bad assertion', function (t) {
   const assertion = { some: {other: 'stuff' }}

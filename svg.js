@@ -9,10 +9,14 @@ module.exports = {
 
 function bake(opts, callback) {
   const assertion = opts.data || opts.assertion
+  const url = opts.url
+    ? opts.url
+    : (assertion && assertion.verify && assertion.verify.url)
+
   var err;
 
-  if (!assertion || !assertion.verify || !assertion.verify.url) {
-    err = TypeError('Must provide a valid assertion as the second argument')
+  if (!url) {
+    err = TypeError('Must provide a valid assertion or URL')
     err.code = 'INVALID_ASSERTION'
     return callback(err)
   }
@@ -31,7 +35,8 @@ function bake(opts, callback) {
 
   // add assertion information
   const fmt = '<openbadges:assertion verify="%s">%s</openbadges:assertion>'
-  const element = util.format(fmt, assertion.verify.url, cdata(assertion))
+  const contents = assertion ? cdata(assertion) : ''
+  const element = util.format(fmt, url, contents)
 
   $('svg').prepend(element)
 
