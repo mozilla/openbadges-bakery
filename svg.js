@@ -54,9 +54,13 @@ function extract(svgData, callback) {
     return callback(err)
   }
 
+  // XXX: cheerio can't handle namespaced tags because it thinks we're
+  // trying to user pseudo selectors, so we do a global search/replace
+  // and turn the NS tags into something it *can* handle.
   svgData = svgData
     .toString('utf8')
     .replace(/openbadges:assertion/g, 'openbadges_assertion')
+
   const $ = cheerio.load(svgData, {xmlMode: true})
   const element = $('openbadges_assertion')
 
