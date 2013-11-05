@@ -3,14 +3,21 @@ const cheerio = require('cheerio')
 
 module.exports = {
   extract: extract,
-  bake: bake
+  bake: bake,
+  isSvg: isSvg,
 }
 
-function bake(svgData, assertion) {
-  if (!assertion || !assertion.verify || !assertion.verify.url)
-    throw new TypeError('Must provide a valid assertion as the second argument')
+function bake(opts, callback) {
+  const assertion = opts.data || opts.assertion
+  var err;
 
-  svgData =svgData
+  if (!assertion || !assertion.verify || !assertion.verify.url) {
+    err = TypeError('Must provide a valid assertion as the second argument')
+    err.code = 'INVALID_ASSERTION'
+    return callback(err)
+  }
+
+  const svgData = opts.image
     .toString('utf8')
     .replace(/openbadges:assertion/g, 'openbadges_assertion')
 
@@ -28,42 +35,60 @@ function bake(svgData, assertion) {
 
   $('svg').prepend(element)
 
-  return $.xml()
+  return callback(null, $.xml())
 }
 
 function cdata(obj) {
   return '<![CDATA[' + JSON.stringify(obj) + ']]>'
 }
 
-function extract(svgData) {
+function isSvg(data) {
+  const $ = cheerio.load(data, {xmlMode: true})
+  return !!$('svg').length
+}
+
+function extract(svgData, callback) {
+  if (!isSvg(svgData)) {
+    const err = new TypeError('Not an SVG')
+    err.code = 'INVALID_SVG'
+    return callback(err)
+  }
+
   svgData = svgData
     .toString('utf8')
     .replace(/openbadges:assertion/g, 'openbadges_assertion')
   const $ = cheerio.load(svgData, {xmlMode: true})
   const element = $('openbadges_assertion')
-  return getAssertionUrl(element)
+
+  return getAssertionUrl(element, callback)
 }
 
-function getAssertionUrl(el) {
+function getAssertionUrl(el, callback) {
   const assertion = getAssertionFromElement(el)
   const attrUrl = el.attr('verify')
 
-  var assertionUrl;
+  var assertionUrl, err;
 
   try {
     if (assertion)
       assertionUrl = JSON.parse(assertion).verify.url
-    return assertionUrl || attrUrl
+    return callback(null, assertionUrl || attrUrl)
   }
 
   catch(e) {
-    if (e.name == 'TypeError')
-      throw Error('Could not find a `verify` structure in the embedded JSON')
+    if (e.name == 'TypeError') {
+      err = new TypeError('Could not find a `verify` structure in the embedded JSON')
+      err.code = 'INVALID_ASSERTION'
+      return callback(err)
+    }
 
-    if (e.name == 'SyntaxError')
-      throw Error('Could not parse JSON in <openbadges:assertion> tag')
+    if (e.name == 'SyntaxError') {
+      err = new SyntaxError('Could not parse JSON in <openbadges:assertion> tag')
+      err.code = 'INVALID_JSON'
+      return callback(err)
+    }
 
-    else throw e
+    else return callback(e)
   }
 }
 
