@@ -6,7 +6,7 @@ const urlutil = require('url');
 
 const png = require('../png.js');
 
-const IMG_PATH = pathutil.join(__dirname, 'testimage.png');
+const IMG_PATH = pathutil.join(__dirname, 'unbaked.png');
 const ASSERTION_URL = "http://example.org";
 const ASSERTION = { verify: {} };
 
