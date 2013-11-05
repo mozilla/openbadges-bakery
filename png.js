@@ -3,13 +3,6 @@ const streampng = require('streampng');
 
 const KEYWORD = 'openbadges';
 
-function createChunk(url) {
-  return streampng.Chunk.tEXt({
-    keyword: KEYWORD,
-    text: url
-  });
-}
-
 module.exports = {
   bake: bake,
   extract: extract,
@@ -87,4 +80,11 @@ function extract(img, callback) {
   png.on('tEXt', textListener);
   png.once('end', endListener);
   png.once('error', errorListener);
+}
+
+function createChunk(url) {
+  return streampng.Chunk.tEXt({
+    keyword: KEYWORD,
+    text: url
+  });
 }
