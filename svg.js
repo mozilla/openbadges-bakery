@@ -53,8 +53,10 @@ function isSvg(data) {
 }
 
 function extract(svgData, callback) {
+  var err;
+
   if (!isSvg(svgData)) {
-    const err = new TypeError('Not an SVG')
+    err = new TypeError('Not an SVG')
     err.code = 'INVALID_SVG'
     return callback(err)
   }
@@ -68,6 +70,12 @@ function extract(svgData, callback) {
 
   const $ = cheerio.load(svgData, {xmlMode: true})
   const element = $('openbadges_assertion')
+
+  if (!element.length) {
+    err = new Error('Image does not have any baked in data.');
+    err.code = 'IMAGE_UNBAKED';
+    return callback(err);
+  }
 
   return getAssertionUrl(element, callback)
 }
