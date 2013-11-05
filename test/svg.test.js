@@ -78,6 +78,12 @@ test('svg extraction: not an svg', function (t) {
   })
 })
 
+test('svg extraction: not baked', function (t) {
+  svg.extract(file('unbaked.svg'), function (err, url) {
+    t.same(err.code, 'IMAGE_UNBAKED')
+    t.end()
+  })
+})
 
 function file(name) {
   return (
