@@ -13,61 +13,75 @@ const urlutil = require('url');
 const png = require('./png')
 const svg = require('./svg')
 
-exports.bake = function (options, callback) {
+module.exports = {
+  bake: bake,
+  extract: extract,
+  debake: debake,
+  getRemoteAssertion: debake,
+}
+
+function bake(options, callback) {
   if (svg.isSvg(options.image))
     return svg.bake(options, callback)
   return png.bake(options, callback)
 }
 
-exports.extract = function extract(img, callback) {
+function extract(img, callback) {
   if (svg.isSvg(img))
     return svg.extract(img, callback)
   return png.extract(img, callback)
-};
+}
 
-exports.debake = function debake(image, callback) {
-  exports.extract(image, function (error, data) {
+function debake(image, callback) {
+  extract(image, function (error, data) {
     if (error)
-      return callback(error);
+      return callback(error)
+
+    var url = data
+    var assertion
 
     // is the extracted data a URL or an assertion?
-    var url = data;
-    var assertion;
     try {
-      assertion = JSON.parse(data);
-      url = assertion.verify.url;
-    } catch (e) {
-    }
+      assertion = JSON.parse(data)
+      url = assertion.verify.url
+    } catch (e) {}
 
     request(url, function (error, response, body) {
       if (error) {
-        error = errors.request(error, url);
-        return callback(error);
+        error = errors.request(error, url)
+        return callback(error)
       }
 
-      const status = response.statusCode;
-      const type = response.headers['content-type'];
+      const status = response.statusCode
+      const type = response.headers['content-type']
 
-      if (status == 200) {
-        return exports.parseResponse(body, url, callback);
+      if (status != 200) {
+        error = (errors[status] || errors.generic)(status, url)
+        return callback(error)
       }
-      error = (errors[status] || errors.generic)(status, url);
-      return callback(error);
-    });
-  });
-};
 
-exports.parseResponse = function parseResponse(body, url, callback) {
-  var error, obj;
+      return parseResponse(body, url, callback)
+    })
+  })
+}
+
+function parseResponse(body, url, callback) {
+  var error, obj
+
   if (typeof body !== 'string')
-    return callback(null, body);
-  try { obj = JSON.parse(body) }
-  catch (original) {
-    error = errors.jsonParse(original, url);
-    return callback(error);
+    return callback(null, body)
+
+  try {
+    obj = JSON.parse(body)
   }
+
+  catch (original) {
+    error = errors.jsonParse(original, url)
+    return callback(error)
+  }
+
   return callback(null, obj);
-};
+}
 
 const errors = {
   request: function (original, url) {
@@ -103,7 +117,4 @@ const errors = {
     error.httpStatusCode = 404;
     return error;
   }
-};
-
-exports.createChunk = png.createChunk;
-exports.KEYWORD = png.keyword;
+}
