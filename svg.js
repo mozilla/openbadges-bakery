@@ -54,7 +54,12 @@ function bake(opts, callback) {
 
   $('svg').prepend(element)
 
-  return callback(null, $.xml())
+  const outputXml = $.xml()
+    .replace('<!--[CDATA[', '<![CDATA[', 'g')
+    .replace(']]-->', ']]>', 'g')
+    .replace('openbadges_assertion', 'openbadges:assertion', 'g')
+
+  return callback(null,outputXml)
 }
 
 function cdata(obj) {
@@ -109,30 +114,7 @@ function extract(svgData, callback) {
 function getAssertionUrl(el, callback) {
   const assertion = getAssertionFromElement(el)
   const attrUrl = el.attr('verify')
-
-  var assertionUrl, err;
-
-  try {
-    if (assertion)
-      assertionUrl = JSON.parse(assertion).verify.url
-    return callback(null, assertionUrl || attrUrl)
-  }
-
-  catch(e) {
-    if (e.name == 'TypeError') {
-      err = new TypeError('Could not find a `verify` structure in the embedded JSON')
-      err.code = 'INVALID_ASSERTION'
-      return callback(err)
-    }
-
-    if (e.name == 'SyntaxError') {
-      err = new SyntaxError('Could not parse JSON in <openbadges:assertion> tag')
-      err.code = 'INVALID_JSON'
-      return callback(err)
-    }
-
-    else return callback(e)
-  }
+  return callback(null, assertion || attrUrl)
 }
 
 function getAssertionFromElement(el) {

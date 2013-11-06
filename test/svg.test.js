@@ -3,26 +3,19 @@ const test = require('tap').test
 
 test('svg data extraction: all good', function (t) {
   svg.extract(file('baked.svg'), function (err, url) {
-    t.same(url, 'http://example.org')
+    t.same(getUrlFromAssertion(url), 'http://example.org')
     t.end()
   })
 })
 
 test('svg data extraction: all good with a stream', function (t) {
   svg.extract(stream('baked.svg'), function (err, url) {
-    t.same(url, 'http://example.org')
+    t.same(getUrlFromAssertion(url), 'http://example.org')
     t.end()
   })
 })
 
-test('svg data extraction: bad json', function (t) {
-  svg.extract(file('bad-json.svg'), function (err) {
-    t.ok(err, 'should have an error')
-    t.end()
-  })
-})
-
-test('svg data extraction: bad json', function (t) {
+test('svg data extraction: no json', function (t) {
   svg.extract(file('no-json.svg'), function (err, url) {
     t.same(url, 'http://example.org')
     t.end()
@@ -31,10 +24,10 @@ test('svg data extraction: bad json', function (t) {
 
 test('svg baking: all good, full assertion', function (t) {
   const assertion = { verify: { url: 'http://example.org' }}
-  const opts = {image: file('unbaked.svg'), data: assertion}
+  const opts = { image: file('unbaked.svg'), data: assertion }
   svg.bake(opts, function (err, svgData) {
     svg.extract(svgData, function (err, url) {
-      t.same(url, 'http://example.org')
+      t.same(getUrlFromAssertion(url), 'http://example.org')
       t.end()
     })
   })
@@ -45,12 +38,11 @@ test('svg baking: all good, full assertion, image stream', function (t) {
   const opts = {image: stream('unbaked.svg'), data: assertion}
   svg.bake(opts, function (err, svgData) {
     svg.extract(svgData, function (err, url) {
-      t.same(url, 'http://example.org')
+      t.same(getUrlFromAssertion(url), 'http://example.org')
       t.end()
     })
   })
 })
-
 
 test('svg baking: all good, just url', function (t) {
   const opts = {image: file('unbaked.svg'), url: 'http://example.org' }
@@ -61,7 +53,6 @@ test('svg baking: all good, just url', function (t) {
     })
   })
 })
-
 
 test('svg baking: bad assertion', function (t) {
   const assertion = { some: {other: 'stuff' }}
@@ -85,7 +76,7 @@ test('svg baking: baking a previously baked badge', function (t) {
     var opts = { image: svgData1, assertion: assertion2 }
     svg.bake(opts, function (err, svgData2) {
       svg.extract(svgData2, function (err, url) {
-        t.same(url, 'http://example.org')
+        t.same(getUrlFromAssertion(url), 'http://example.org')
         t.end()
       })
     })
@@ -141,4 +132,8 @@ function stream(name) {
     require('fs').createReadStream(
       require('path').join(__dirname, name))
   )
+}
+
+function getUrlFromAssertion(str) {
+  return JSON.parse(str).verify.url
 }
