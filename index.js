@@ -9,11 +9,11 @@
 const util = require('util');
 const request = require('request');
 const urlutil = require('url');
-const typeCheck = require('./stream-type-check')
 const jws = require('jws')
 
-const png = require('./png')
-const svg = require('./svg')
+const typeCheck = require('./lib/stream-type-check')
+const png = require('./lib/png')
+const svg = require('./lib/svg')
 
 module.exports = {
   bake: bake,

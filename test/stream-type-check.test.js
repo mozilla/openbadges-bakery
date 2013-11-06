@@ -1,6 +1,6 @@
 const test = require('tap').test
 const concat = require('concat-stream')
-const typeCheck = require('../stream-type-check')
+const typeCheck = require('../lib/stream-type-check')
 const fs = require('fs')
 const path = require('path')
 
@@ -36,11 +36,6 @@ test('checking svg, nostream', function (t) {
     }))
   })
 })
-
-
-
-
-
 
 function stream(name, opts) {
   return fs.createReadStream(path.join(__dirname, name), opts)

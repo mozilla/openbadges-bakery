@@ -1,4 +1,4 @@
-const svg = require('../svg')
+const svg = require('../lib/svg')
 const test = require('tap').test
 
 test('svg data extraction: all good', function (t) {
