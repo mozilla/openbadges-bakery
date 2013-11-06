@@ -9,6 +9,7 @@
 const util = require('util');
 const request = require('request');
 const urlutil = require('url');
+const typeCheck = require('./stream-type-check')
 
 const png = require('./png')
 const svg = require('./svg')
@@ -20,16 +21,36 @@ module.exports = {
   getRemoteAssertion: debake,
 }
 
-function bake(options, callback) {
-  if (svg.isSvg(options.image))
-    return svg.bake(options, callback)
-  return png.bake(options, callback)
+var bakeries = {
+  'image/png': png.bake,
+  'image/svg+xml': svg.bake,
+  'unknown': unknownImageType
 }
 
-function extract(img, callback) {
-  if (svg.isSvg(img))
-    return svg.extract(img, callback)
-  return png.extract(img, callback)
+var extractors = {
+  'image/png': png.extract,
+  'image/svg+xml': svg.extract,
+  'unknown': unknownImageType
+}
+
+
+function unknownImageType(opts, callback) {
+  return callback(new Error('Unknown/unhandled image type'))
+}
+
+function bake(options, callback) {
+  typeCheck(options.image, function (err, type, stream) {
+    if (err) return callback(err)
+    options.image = stream
+    return bakeries[type](options, callback)
+  })
+}
+
+function extract(imgdata, callback) {
+  typeCheck(imgdata, function (err, type, stream) {
+    if (err) return callback(err)
+    return extractors[type](stream, callback)
+  })
 }
 
 function debake(image, callback) {
