@@ -15,19 +15,21 @@ module.exports = typeCheck;
 
 function typeCheck(stream, callback) {
   var buf = Buffer(0)
-  var restream = through()
+  const restream = through()
+  const headerLen = 256
 
   function onData (data) {
     buf = Buffer.concat([buf, data])
-    if (buf.length < 256) return
+    if (buf.length < headerLen) return
 
     if (stream.removeListener)
       stream.removeListener('data', onData)
 
+    const header = buf.slice(0, headerLen)
     var type
-    if (check(buf, PNG))
+    if (check(header, PNG))
       type = 'image/png'
-    else if (check(buf, SVG))
+    else if (check(header, SVG))
       type = 'image/svg+xml'
     else
       type = 'unknown'
