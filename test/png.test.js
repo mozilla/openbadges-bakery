@@ -81,7 +81,6 @@ test('png.bake: do not bake something twice', function (t) {
   });
 });
 
-
 function getImageStream() {
   var imgStream = fs.createReadStream(IMG_PATH);
   return imgStream;
