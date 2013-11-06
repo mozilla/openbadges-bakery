@@ -47,7 +47,7 @@ test('bakery.debake: should work with full assertion', function (t) {
 
   t.plan(3)
 
-  broil(opts, function (baked) {
+  broil(opts, function (baked, server) {
     bakery.extract(baked, function (err, string) {
       const contents = JSON.parse(string)
       t.same(contents.band, assertion.band)
@@ -57,6 +57,8 @@ test('bakery.debake: should work with full assertion', function (t) {
       t.notOk(err, 'should not have an error')
       t.same(contents.band, assertion.band)
     })
+
+    server.close()
   })
 })
 
@@ -135,8 +137,6 @@ test('bakery.debake: error when debaking unbaked image', function (t) {
   })
 })
 
-
-
 const urlutil = require('url')
 const path = require('path')
 
@@ -167,7 +167,7 @@ function broil(opts, callback) {
 
     bakery.bake(bakeOpts, function (err, baked) {
       if (err) throw err;
-      callback(baked);
+      callback(baked, server);
     })
   })
 }
