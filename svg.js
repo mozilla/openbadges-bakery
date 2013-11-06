@@ -57,7 +57,6 @@ function bake(opts, callback) {
   const outputXml = $.xml()
     .replace('<!--[CDATA[', '<![CDATA[', 'g')
     .replace(']]-->', ']]>', 'g')
-    .replace('openbadges_assertion', 'openbadges:assertion', 'g')
 
   return callback(null,outputXml)
 }
@@ -114,7 +113,13 @@ function extract(svgData, callback) {
 function getAssertionUrl(el, callback) {
   const assertion = getAssertionFromElement(el)
   const attrUrl = el.attr('verify')
-  return callback(null, assertion || attrUrl)
+
+  if (assertion) {
+    const fixedAssertion = assertion.replace('openbadges_assertion', 'openbadges:assertion', 'g')
+    return callback(null, fixedAssertion)
+  }
+
+  return callback(null, attrUrl)
 }
 
 function getAssertionFromElement(el) {
