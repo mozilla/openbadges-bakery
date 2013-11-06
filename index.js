@@ -10,6 +10,7 @@ const util = require('util');
 const request = require('request');
 const urlutil = require('url');
 const typeCheck = require('./stream-type-check')
+const jws = require('jws')
 
 const png = require('./png')
 const svg = require('./svg')
@@ -33,7 +34,6 @@ var extractors = {
   'unknown': unknownImageType
 }
 
-
 function unknownImageType(opts, callback) {
   return callback(new Error('Unknown/unhandled image type'))
 }
@@ -54,19 +54,35 @@ function extract(imgdata, callback) {
 }
 
 function debake(image, callback) {
+  function defer(fn) {
+    return (global.setImmediate || process.nextTick)(fn)
+  }
+
   extract(image, function (error, data) {
     if (error)
-      return callback(error)
+      return defer(function(){ callback(error) })
 
     var url = data
     var assertion
+    var decoded
 
-    // is the extracted data a URL or an assertion?
+    // signature?
+    if ((decoded = jws.decode(data))) {
+      try {
+        assertion = JSON.parse(decoded.payload)
+        return defer(function(){ callback(null, assertion) })
+      } catch (e) {
+        return defer(function(){ callback(errors.jsonParse(e)) })
+      }
+    }
+
+    // assertion?
     try {
       assertion = JSON.parse(data)
-      url = assertion.verify.url
-    } catch (e) {}
+      return defer(function(){ callback(null, assertion) })
+    } catch (_) {}
 
+    // fall back to url
     request(url, function (error, response, body) {
       if (error) {
         error = errors.request(error, url)
@@ -124,7 +140,7 @@ const errors = {
   },
 
   jsonParse: function (original, url) {
-    var error = new Error('Could not parse JSON at endpoint');
+    var error = new Error('Could not parse JSON');
     error.code = 'JSON_PARSE_ERROR';
     error.url = url;
     error.original = original;

@@ -12,7 +12,7 @@ module.exports = {
 
 function bake(options, callback) {
   const buffer = options.image;
-  var data = options.url || options.data || options.assertion;
+  var data = options.url || options.data || options.assertion || options.signature;
 
   if (!data)
     return callback(new Error('must pass a `data` or `url` option'));

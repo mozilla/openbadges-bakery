@@ -36,20 +36,23 @@ Bakes some data into an image.
 
 Options are
 - `image`: either a buffer or a stream representing the PNG or SVG to bake
-- `assertion`: the assertion to save into the image
+- `assertion`: assertion to save into the image (optional)
+- `signature`: JSON Web Signature representing a signed OpenBadges assertion (optional)
+
+You must pass either `assertion` or `signature`
 
 `callback` has the signature `function(err, imageData)`
 
 ## bakery.extract(image, callback)
 
-Gets the assertion data from the baked badge.
+Gets the raw data from the badge. This could be a URL, assertion in JSON format or a signature.
 
 `callback` has the signature `function (err, data)`
 
 ## bakery.debake(image, callback);
-## bakery.getRemoteAssertion(image, callback);
+## bakery.getAssertion(image, callback);
 
-Gets the verification URL from a baked badge and attempts to retreive the assertion at the other end.
+Gets the assertion from the badge. If the assertion is remote, this will require an HTTP request. If the assertion is baked into the badge, either directly or as part of a signature, this will pull the local copy.
 
 `image` should be a stream or a buffer
 
