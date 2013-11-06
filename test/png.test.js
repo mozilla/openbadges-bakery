@@ -10,14 +10,6 @@ const IMG_PATH = pathutil.join(__dirname, 'unbaked.png');
 const ASSERTION_URL = "http://example.org";
 const ASSERTION = { verify: {} };
 
-test('png.createChunk', function (t) {
-  var chunk = png.createChunk(ASSERTION_URL);
-  t.same(chunk.keyword, png.keyword, 'uses the right keyword');
-  t.same(chunk.text, ASSERTION_URL, 'assigns the text properly');
-  t.ok(chunk instanceof streampng.Chunk.tEXt, 'makes a tEXt chunk');
-  t.end();
-});
-
 test('png.extract', function (t) {
   var nonImageBuffer = new Buffer('Totally not a png');
   png.extract(nonImageBuffer, function (err, url) {
@@ -80,11 +72,11 @@ test('png.bake: takes a stream', function (t) {
 test('png.bake: do not bake something twice', function (t) {
   preheat(function (_, img) {
     png.bake({image: img, url: 'wut'}, function (err, baked) {
-      t.ok(err, 'should be an error');
-      t.notOk(baked, 'should not get an image back');
-      t.same(err.code, 'IMAGE_ALREADY_BAKED', 'should get correct error code');
-      t.same(err.contents, ASSERTION_URL, 'should get the contents of the chunk');
-      t.end();
+      png.extract(baked, function (err, url) {
+        t.notOk(err, 'there should be a matching iTXt chunk');
+        t.same(url, 'wut', 'should be able to find the right url');
+        t.end();
+      });
     })
   });
 });

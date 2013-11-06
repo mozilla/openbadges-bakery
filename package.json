@@ -9,7 +9,7 @@
   "bin": "bin/oven",
   "dependencies": {
     "request": "~2.11.4",
-    "streampng": "0.1.6",
+    "streampng": "0.1.7",
     "optimist": "~0.3.5",
     "cheerio": "~0.12.3",
     "concat-stream": "~1.1.0",

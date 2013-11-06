@@ -17,9 +17,8 @@ function bake(options, callback) {
   if (!data)
     return callback(new Error('must pass a `data` or `url` option'));
 
-  if (typeof data === 'object') {
+  if (typeof data === 'object')
     data = JSON.stringify(data);
-  }
 
   const png = streampng(buffer);
   const chunk = createChunk(data);
@@ -40,13 +39,9 @@ function bake(options, callback) {
   png.on('end', function () {
     if (hadError) return;
 
-    if (existingChunk) {
-      const msg = util.format('This image already has a chunk with the `%s` keyword (contains: %j)', KEYWORD, chunk.text);
-      const error = new Error(msg);
-      error.code = 'IMAGE_ALREADY_BAKED';
-      error.contents = existingChunk.text;
-      return callback(error);
-    }
+    if (existingChunk)
+      existingChunk.set('text', chunk.text)
+
     return png.out(callback);
   })
 }
@@ -61,6 +56,7 @@ function extract(img, callback) {
       return;
     found = true;
     png.removeListener('tEXt', textListener);
+    png.removeListener('iTXt', textListener);
     return callback(null, chunk.text);
   }
 
@@ -78,13 +74,14 @@ function extract(img, callback) {
   }
 
   png.on('tEXt', textListener);
+  png.on('iTXt', textListener);
   png.once('end', endListener);
   png.once('error', errorListener);
 }
 
-function createChunk(url) {
-  return streampng.Chunk.tEXt({
+function createChunk(data) {
+  return streampng.Chunk.iTXt({
     keyword: KEYWORD,
-    text: url
-  });
+    text: data
+  })
 }
