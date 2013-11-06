@@ -7,136 +7,102 @@
  */
 
 const util = require('util');
-const streampng = require('streampng');
 const request = require('request');
 const urlutil = require('url');
+const typeCheck = require('./stream-type-check')
 
-const KEYWORD = 'openbadges';
+const png = require('./png')
+const svg = require('./svg')
 
-function createChunk(url) {
-  return streampng.Chunk.tEXt({
-    keyword: KEYWORD,
-    text: url
-  });
+module.exports = {
+  bake: bake,
+  extract: extract,
+  debake: debake,
+  getRemoteAssertion: debake,
 }
 
-exports.bake = function bake(options, callback) {
-  const buffer = options.image;
-  var data = options.url || options.data;
+var bakeries = {
+  'image/png': png.bake,
+  'image/svg+xml': svg.bake,
+  'unknown': unknownImageType
+}
 
-  if (!data)
-    return callback(new Error('must pass a `data` or `url` option'));
+var extractors = {
+  'image/png': png.extract,
+  'image/svg+xml': svg.extract,
+  'unknown': unknownImageType
+}
 
-  if (typeof data === 'object') {
-    data = JSON.stringify(data);
-  }
 
-  const png = streampng(buffer);
-  const chunk = createChunk(data);
-  var existingChunk, hadError;
+function unknownImageType(opts, callback) {
+  return callback(new Error('Unknown/unhandled image type'))
+}
 
-  png.inject(chunk, function (txtChunk) {
-    if (txtChunk.keyword === KEYWORD) {
-      existingChunk = txtChunk;
-      return false;
-    }
+function bake(options, callback) {
+  typeCheck(options.image, function (err, type, stream) {
+    if (err) return callback(err)
+    options.image = stream
+    return bakeries[type](options, callback)
   })
+}
 
-  png.on('error', function (err) {
-    hadError = true;
-    return callback(err)
+function extract(imgdata, callback) {
+  typeCheck(imgdata, function (err, type, stream) {
+    if (err) return callback(err)
+    return extractors[type](stream, callback)
   })
+}
 
-  png.on('end', function () {
-    if (hadError) return;
-
-    if (existingChunk) {
-      const msg = util.format('This image already has a chunk with the `%s` keyword (contains: %j)', KEYWORD, chunk.text);
-      const error = new Error(msg);
-      error.code = 'IMAGE_ALREADY_BAKED';
-      error.contents = existingChunk.text;
-      return callback(error);
-    }
-    return png.out(callback);
-  })
-
-};
-
-exports.extract = function extract(img, callback) {
-  const png = streampng(img);
-  var found = false;
-  var hadError = false;
-
-  function textListener(chunk) {
-    if (chunk.keyword !== 'openbadges')
-      return;
-    found = true;
-    png.removeListener('tEXt', textListener);
-    return callback(null, chunk.text);
-  }
-
-  function endListener() {
-    if (!found && !hadError) {
-      const error = new Error('Image does not have any baked in data.');
-      error.code = 'IMAGE_UNBAKED';
-      return callback(error);
-    }
-  }
-
-  function errorListener(error) {
-    hadError = true;
-    return callback(error);
-  }
-
-  png.on('tEXt', textListener);
-  png.once('end', endListener);
-  png.once('error', errorListener);
-};
-
-
-exports.debake = function debake(image, callback) {
-  exports.extract(image, function (error, data) {
+function debake(image, callback) {
+  extract(image, function (error, data) {
     if (error)
-      return callback(error);
+      return callback(error)
+
+    var url = data
+    var assertion
 
     // is the extracted data a URL or an assertion?
-    var url = data;
-    var assertion;
     try {
-      assertion = JSON.parse(data);
-      url = assertion.verify.url;
-    } catch (e) {
-    }
+      assertion = JSON.parse(data)
+      url = assertion.verify.url
+    } catch (e) {}
 
     request(url, function (error, response, body) {
       if (error) {
-        error = errors.request(error, url);
-        return callback(error);
+        error = errors.request(error, url)
+        return callback(error)
       }
 
-      const status = response.statusCode;
-      const type = response.headers['content-type'];
+      const status = response.statusCode
+      const type = response.headers['content-type']
 
-      if (status == 200) {
-        return exports.parseResponse(body, url, callback);
+      if (status != 200) {
+        error = (errors[status] || errors.generic)(status, url)
+        return callback(error)
       }
-      error = (errors[status] || errors.generic)(status, url);
-      return callback(error);
-    });
-  });
-};
 
-exports.parseResponse = function parseResponse(body, url, callback) {
-  var error, obj;
+      return parseResponse(body, url, callback)
+    })
+  })
+}
+
+function parseResponse(body, url, callback) {
+  var error, obj
+
   if (typeof body !== 'string')
-    return callback(null, body);
-  try { obj = JSON.parse(body) }
-  catch (original) {
-    error = errors.jsonParse(original, url);
-    return callback(error);
+    return callback(null, body)
+
+  try {
+    obj = JSON.parse(body)
   }
+
+  catch (original) {
+    error = errors.jsonParse(original, url)
+    return callback(error)
+  }
+
   return callback(null, obj);
-};
+}
 
 const errors = {
   request: function (original, url) {
@@ -172,7 +138,4 @@ const errors = {
     error.httpStatusCode = 404;
     return error;
   }
-};
-
-exports.createChunk = createChunk;
-exports.KEYWORD = KEYWORD;
+}

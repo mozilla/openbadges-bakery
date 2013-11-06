@@ -11,5 +11,4 @@ home:
 issues:
 	@open https://github.com/mozilla/openbadges-bakery/issues
 
-
 .PHONY: list test home issues

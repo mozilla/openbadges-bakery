@@ -1,229 +1,173 @@
-var test = require('tap').test;
-var fs = require('fs');
-var streampng = require('streampng');
-var pathutil = require('path');
-var urlutil = require('url');
-var oneshot = require('oneshot');
+const test = require('tap').test
+const oneshot = require('oneshot')
+const fs = require('fs')
 
-var bakery = require('..');
-
-var IMG_PATH = pathutil.join(__dirname, 'testimage.png');
-var ASSERTION_URL = "http://example.org";
-var ASSERTION = { verify: {} };
-
-/**
- * Get an image stream for the default image.
- */
-
-function getImageStream() {
-  var imgStream = fs.createReadStream(IMG_PATH);
-  return imgStream;
-}
-
-/**
- * Get the image buffer for the default image
- */
-
-function getImageBuffer() {
-  var imgBuffer = fs.readFileSync(IMG_PATH);
-  return imgBuffer;
-}
-
-/**
- * quickly bake an image with the standard url
- */
-
-function preheat(callback) {
-  var imgStream = getImageStream();
-  var options = {image: imgStream, url: ASSERTION_URL};
-  bakery.bake(options, callback);
-}
-
-/**
- * start a server with some options, then bake an image with that url
- */
-
-function broil(opts, callback) {
-  oneshot(opts, function (server, urlobj) {
-    var url = urlutil.format(urlobj);
-    var bakeOpts;
-    if (opts.assertion) {
-      ASSERTION.verify.url = url;
-      var bakeOpts = { image: getImageStream(), data: ASSERTION };
-    } else {
-      var bakeOpts = { image: getImageStream(), url: url };
-    }
-    bakery.bake(bakeOpts, function (err, baked) {
-      if (err) throw err;
-      callback(baked);
-    });
-  });
-}
-
-test('bakery.createChunk', function (t) {
-  var chunk = bakery.createChunk(ASSERTION_URL);
-  t.same(chunk.keyword, bakery.KEYWORD, 'uses the right keyword');
-  t.same(chunk.text, ASSERTION_URL, 'assigns the text properly');
-  t.ok(chunk instanceof streampng.Chunk.tEXt, 'makes a tEXt chunk');
-  t.end();
-});
-
-test('bakery.extract', function (t) {
-  var nonImageBuffer = new Buffer('Totally not a png');
-  bakery.extract(nonImageBuffer, function (err, url) {
-    t.ok(err, 'should get error in callback arguments');
-    t.end();
-  });
-});
-
-test('bakery.bake: takes a buffer', function (t) {
-  var imgBuffer = getImageBuffer();
-  var options = {
-    image: imgBuffer,
-    url: ASSERTION_URL,
-  };
-  bakery.bake(options, function (err, baked) {
-    t.notOk(err, 'should not have an error');
-    t.ok(baked, 'should get back some data');
-    bakery.extract(baked, function (err, url) {
-      t.notOk(err, 'there should be a matching tEXt chunk');
-      t.same(url, ASSERTION_URL, 'should be able to find the url');
-      t.end();
-    });
-  })
-});
-
-test('bakery.bake: do not throw on bad image', function (t) {
-  var options = {
-    image: Buffer('pfffffft whatever'),
-    url: ASSERTION_URL,
-  }
-  try {
-    bakery.bake(options, function (err, baked) {
-      t.ok(err, 'should have an error')
-      t.notOk(baked, 'should not have baked data')
-    })
-  } catch(e) {
-    t.fail('should not have thrown')
-  } finally {
-    t.end()
-  }
-});
-
-test('bakery.bake: takes a stream', function (t) {
-  var imgStream = getImageStream();
-  var options = {
-    image: imgStream,
-    url: ASSERTION_URL,
-  };
-  bakery.bake(options, function (err, baked) {
-    t.notOk(err, 'should not have an error');
-    t.ok(baked, 'should get back some data');
-    bakery.extract(baked, function (err, url) {
-      t.notOk(err, 'there should be a matching tEXt chunk');
-      t.same(url, ASSERTION_URL, 'should be able to find the url');
-      t.end();
-    });
-  })
-});
-
-test('bakery.bake: do not bake something twice', function (t) {
-  preheat(function (_, img) {
-    bakery.bake({image: img, url: 'wut'}, function (err, baked) {
-      t.ok(err, 'should be an error');
-      t.notOk(baked, 'should not get an image back');
-      t.same(err.code, 'IMAGE_ALREADY_BAKED', 'should get correct error code');
-      t.same(err.contents, ASSERTION_URL, 'should get the contents of the chunk');
-      t.end();
-    })
-  });
-});
+const bakery = require('..')
 
 test('bakery.debake: should work with URL', function (t) {
-  var expect = {band: 'grapeful dread'};
-  var opts = {
-    body: JSON.stringify(expect),
-    type: 'application/json'
-  };
-  broil(opts, function (baked) {
-    bakery.debake(baked, function (err, contents) {
-      t.notOk(err, 'should not have an error');
-      t.same(contents, expect);
-      t.end();
-    });
-  });
-});
-
-test('bakery.debake: should work with full assertion', function (t) {
-  var expect = {band: 'grapeful dread'};
-  var opts = {
+  const expect = { band: 'grapeful dread' }
+  const proto = {
     body: JSON.stringify(expect),
     type: 'application/json',
-    assertion: true
-  };
-  broil(opts, function (baked) {
+  }
+
+  const svgOpts = extend(proto, {image: file('unbaked.svg')})
+  const pngOpts = extend(proto, {image: file('unbaked.png')})
+
+  t.plan(4)
+  broil(svgOpts, function (baked) {
     bakery.debake(baked, function (err, contents) {
-      t.notOk(err, 'should not have an error');
-      t.same(contents, expect);
-      t.end();
-    });
-  });
-});
+      t.notOk(err, 'should not have an error')
+      t.same(contents, expect)
+    })
+  })
+
+  broil(pngOpts, function (baked) {
+    bakery.debake(baked, function (err, contents) {
+      t.notOk(err, 'should not have an error')
+      t.same(contents, expect)
+    })
+  })
+})
+
+test('bakery.debake: should work with full assertion', function (t) {
+  const assertion = {
+    band: 'ride',
+    verify: {
+      url: '*will be replaced by broil*'
+    }
+  }
+
+  const opts = {
+    body: JSON.stringify(assertion),
+    type: 'application/json',
+    image: file('unbaked.png'),
+    assertion: assertion,
+  }
+
+  t.plan(3)
+
+  broil(opts, function (baked) {
+    bakery.extract(baked, function (err, string) {
+      const contents = JSON.parse(string)
+      t.same(contents.band, assertion.band)
+    })
+
+    bakery.debake(baked, function (err, contents) {
+      t.notOk(err, 'should not have an error')
+      t.same(contents.band, assertion.band)
+    })
+  })
+})
+
 
 test('bakery.debake: should get a parse error', function (t) {
-  var opts = {
+  const opts = {
     body: "{no json here}",
-    type: 'application/json'
-  };
+    type: 'application/json',
+    image: file('unbaked.svg'),
+  }
+
   broil(opts, function (baked) {
     bakery.debake(baked, function (err, contents) {
-      t.ok(err, 'should have an error');
-      t.same(err.code, 'JSON_PARSE_ERROR', 'should be a json parse error');
-      t.end();
-    });
-  });
-});
+      t.ok(err, 'should have an error')
+      t.same(err.code, 'JSON_PARSE_ERROR', 'should be a json parse error')
+      t.end()
+    })
+  })
+})
 
 test('bakery.debake: 404 should return error', function (t) {
-  var opts = { body: 'x', statusCode: 404 };
+  const opts = {
+    body: 'x',
+    statusCode: 404,
+    image: file('unbaked.png')
+  }
+
   broil(opts, function (baked) {
     bakery.debake(baked, function (err, contents) {
-      t.ok(err, 'should have an error');
-      t.same(err.code, 'RESOURCE_NOT_FOUND', 'should have a resource not found error');
-      t.same(err.httpStatusCode, 404, 'should have a 404');
-      t.end();
-    });
-  });
-});
+      t.ok(err, 'should have an error')
+      t.same(err.code, 'RESOURCE_NOT_FOUND', 'should have a resource not found error')
+      t.same(err.httpStatusCode, 404, 'should have a 404')
+      t.end()
+    })
+  })
+})
 
 test('bakery.debake: 500 should return generic error', function (t) {
-  var opts = { body: 'x', statusCode: 500 };
+  const opts = {
+    body: 'x',
+    statusCode: 500,
+    image: file('unbaked.png')
+  }
+
   broil(opts, function (baked) {
     bakery.debake(baked, function (err, contents) {
       t.ok(err, 'should have an error');
       t.same(err.code, 'RESOURCE_ERROR', 'should have a resource error');
       t.same(err.httpStatusCode, 500, 'should have a 500');
       t.end();
-    });
-  });
-});
+    })
+  })
+})
 
 test('bakery.debake: error when DNS fails', function (t) {
-  var opts = { image: getImageStream(), url: 'http://this.does.not.exist.bogus'};
+  var opts = {
+    image: file('unbaked.svg'),
+    url: 'http://this.does.not.exist.bogus'
+  }
+
   bakery.bake(opts, function (err, baked) {
     bakery.debake(baked, function (err, contents) {
-      t.ok(err, 'should have an error');
-      t.same(err.code, 'REQUEST_ERROR', 'should be a request error');
-      t.end();
-    });
-  });
-});
+      t.ok(err, 'should have an error')
+      t.same(err.code, 'REQUEST_ERROR', 'should be a request error')
+      t.end()
+    })
+  })
+})
 
 test('bakery.debake: error when debaking unbaked image', function (t) {
-  var image = getImageStream();
+  const image = file('unbaked.svg')
   bakery.debake(image, function (err, contents) {
-    t.ok(err, 'should have an error');
-    t.same(err.code, 'IMAGE_UNBAKED', 'should get unbaked image error');
-    t.end();
-  });
-});
+    t.ok(err, 'should have an error')
+    t.same(err.code, 'IMAGE_UNBAKED', 'should get unbaked image error')
+    t.end()
+  })
+})
+
+
+
+const urlutil = require('url')
+const path = require('path')
+
+function file(name) {
+  return fs.readFileSync(path.join(__dirname, name))
+}
+
+function extend(proto, obj) {
+  var newObj = Object.create(proto)
+  Object.keys(obj).forEach(function (key) {
+    newObj[key] = obj[key]
+  })
+  return newObj
+}
+
+// start a server with some options, then bake an image with that url
+function broil(opts, callback) {
+  oneshot(opts, function (server, urlobj) {
+    const url = urlutil.format(urlobj);
+    const assertion = opts.assertion
+    var bakeOpts;
+    if (assertion) {
+      assertion.verify.url = url;
+      bakeOpts = { image: opts.image, data: assertion };
+    } else {
+      bakeOpts = { image: opts.image, url: url };
+    }
+
+    bakery.bake(bakeOpts, function (err, baked) {
+      if (err) throw err;
+      callback(baked);
+    })
+  })
+}

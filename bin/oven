@@ -4,7 +4,7 @@ const fs = require('fs');
 const argv = require('optimist').argv;
 const bakery = require('../');
 const path = require('path');
-const url = argv._[0];
+const input = argv._[0];
 const infile = argv.in||argv.infile;
 const outfile = argv.out||argv.outfile;
 const extract = 'extract' in argv;
@@ -21,15 +21,25 @@ function extractData(stream, timer) {
     }
     out(data + '\n');
     process.exit(0);
-  })
+  });
 }
 
 function bakeImage(stream, timer) {
   stream.resume();
-  bakery.bake({
-    image: stream,
-    url: url
-  }, function done(err, baked) {
+
+  const opts = { image: stream }
+
+  if (isJson(input)) {
+    console.error('interpreting input as JSON')
+    opts.assertion = JSON.parse(input)
+  }
+
+  else {
+    console.error('interpreting input as a URL')
+    opts.url = input
+  }
+
+  bakery.bake(opts, function done(err, baked) {
     timer && timer.clear();
     if (err) {
       log('there was an error:', err.message);
@@ -51,14 +61,14 @@ function bakeImage(stream, timer) {
     clear: function () { this.id && clearTimeout(this.id) },
     set: function () { return this.id = setTimeout.apply(null, arguments) }
   };
-  if (!url && !extract)  {
-    log('You must pass a url to bake into the image');
+  if (!input && !extract)  {
+    log('You must pass a url or JSON to bake into the image');
     process.exit(1);
   }
   const stream = (function figureOutStream() {
     if (infile)
       return fs.createReadStream(path.resolve(infile))
-    timer.set(function () { log('waiting for PNG data on stdin...')}, 2000);
+    timer.set(function () { log('waiting for image data on stdin...')}, 2000);
     return process.stdin
   })()
 
@@ -72,3 +82,8 @@ process.on('SIGINT', function () {
   log('interrupt');
   process.exit(2);
 });
+
+function isJson(str) {
+  try { JSON.parse(str); return true }
+  catch(e) { return false }
+}

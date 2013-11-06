@@ -10,7 +10,11 @@
   "dependencies": {
     "request": "~2.11.4",
     "streampng": "0.1.6",
-    "optimist": "~0.3.5"
+    "optimist": "~0.3.5",
+    "cheerio": "~0.12.3",
+    "concat-stream": "~1.1.0",
+    "through": "~2.3.4",
+    "buffer-equal": "0.0.0"
   },
   "devDependencies": {
     "oneshot": "~0.1.0",
