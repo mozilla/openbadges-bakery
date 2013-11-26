@@ -44,8 +44,6 @@ test('immediately fail if given nothing', function (t) {
   })
 })
 
-
-
 function stream(name, opts) {
   return fs.createReadStream(path.join(__dirname, name), opts)
 }
