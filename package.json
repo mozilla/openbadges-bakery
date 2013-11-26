@@ -1,6 +1,6 @@
 {
   "name": "openbadges-bakery",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Tools for baking and debaking openbadge images",
   "main": "index.js",
   "directories": {
