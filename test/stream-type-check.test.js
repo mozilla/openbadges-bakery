@@ -37,6 +37,15 @@ test('checking svg, nostream', function (t) {
   })
 })
 
+test('immediately fail if given nothing', function (t) {
+  typeCheck(null, function (err, type, restream) {
+    t.ok(err, 'should have error')
+    t.end()
+  })
+})
+
+
+
 function stream(name, opts) {
   return fs.createReadStream(path.join(__dirname, name), opts)
 }
