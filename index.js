@@ -20,6 +20,7 @@ module.exports = {
   extract: extract,
   debake: debake,
   getRemoteAssertion: debake,
+  getAssertion: debake,
   typeCheck: typeCheck,
 }
 
