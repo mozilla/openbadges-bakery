@@ -28,7 +28,7 @@ $ oven [--in path/to/image.png] --extract
 
 Same as above,  you can also pipe a file to stdin. The data will be printed to stdout.
 
-# Libary Usage
+# Library Usage
 
 ## bakery.bake(options callback);
 
