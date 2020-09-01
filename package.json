@@ -15,7 +15,7 @@
     "concat-stream": "~1.1.0",
     "through": "~2.3.4",
     "buffer-equal": "0.0.0",
-    "jws": "~0.2.2"
+    "jws": "~4.0.0"
   },
   "devDependencies": {
     "oneshot": "~0.1.0",
